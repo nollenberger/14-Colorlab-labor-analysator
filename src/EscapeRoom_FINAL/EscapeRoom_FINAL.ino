@@ -497,67 +497,15 @@ void playSuccessSequence() {
   Serial.println("🔊 ERFOLG - Spiele Sound 8 (rechner hochfahren)");
   mp3Player.play(1);  // <-- ÄNDERN SIE HIER FÜR ERFOLG
   
-  // LED ANIMATION SOFORT STARTEN (parallel zu Sound!)
-   unsigned long elapsed = millis() - ledAnimationStartTime;
-  
-  // Phase 1: 0-4 Sekunden - Alle LEDs aus
-  if (elapsed < 4000) {
-    leds[0] = CRGB::Black;  // LED 0 aus
-    leds[1] = CRGB::Black;  // LED 1 aus
-    FastLED.show();
-  }
-  // Phase 2: 4-7 Sekunden - LED 0 BLAU blinkt 16x (alle ~125ms)
-  else if (elapsed >= 4000 && elapsed < 7000) {
-    if (millis() - lastOrangeBlinkTime >= 125) {  // 3000ms / 24 = 125ms pro Blink-Zyklus
-      orangeLedState = !orangeLedState;
-      if (orangeLedState) {
-        leds[0] = CRGB::Blue;   // LED 0 BLAU (nicht orange!)
-      } else {
-        leds[0] = CRGB::Black;  // LED 0 aus
-      }
-      leds[1] = CRGB::Black;  // LED 1 bleibt aus
-      FastLED.show();
-      lastOrangeBlinkTime = millis();
-    }
-  }
-  // Phase 3: 7-8 Sekunden - Alle LEDs aus
-  else if (elapsed >= 7000 && elapsed < 8000) {
-    leds[0] = CRGB::Black;  // LED 0 aus
-    leds[1] = CRGB::Black;  // LED 1 aus
-    FastLED.show();
-  }
-  // Phase 4: 8-9 Sekunden - LED 1 GRÜN blinkt 2x (alle 250ms)
-  else if (elapsed >= 8000 && elapsed < 9000) {
-    if (greenBlinkCount < 4) {  // 2x blinken = 4 Zustände (an-aus-an-aus)
-      if (millis() - lastGreenBlinkTime >= 250) {  // Alle 250ms umschalten
-        greenLedState = !greenLedState;
-        if (greenLedState) {
-          leds[1] = CRGB::Green;  // LED 1 GRÜN an
-        } else {
-          leds[1] = CRGB::Black;  // LED 1 aus
-        }
-        greenBlinkCount++;
-        lastGreenBlinkTime = millis();
-      }
-    }
-    leds[0] = CRGB::Black;  // LED 0 aus
-    FastLED.show();
-  }
-  // Phase 5: 9-20 Sekunden - LED 1 dauerhaft GRÜN
-  else if (elapsed >= 9000 && elapsed < LED_ANIMATION_TOTAL_DURATION) {
-    leds[0] = CRGB::Black;  // LED 0 aus
-    leds[1] = CRGB::Green;  // LED 1 dauerhaft GRÜN
-    FastLED.show();
-  }
-  // Phase 6: Nach 20 Sekunden - Alle LEDs aus und Animation beenden
-  else if (elapsed >= LED_ANIMATION_TOTAL_DURATION) {
-    leds[0] = CRGB::Black;  // LED 0 aus
-    leds[1] = CRGB::Black;  // LED 1 aus
-    FastLED.show();
-    ledAnimationActive = false;
-    Serial.println("✅ LED Loading Animation nach 20 Sekunden beendet - alle LEDs aus");
-  }
-  Serial.println("🟠 LED Animation SOFORT gestartet - parallel zu Sound!");
+  // LED ANIMATION SOFORT STARTEN (parallel zu Sound!) - KORREKTE INITIALISIERUNG
+  ledAnimationActive = true;
+  ledAnimationStartTime = millis();  // JETZT setzen!
+  greenBlinkCount = 0;  // Reset für grüne LED
+  orangeLedState = false;  // Reset für orange LED
+  greenLedState = false;   // Reset für grüne LED
+  lastOrangeBlinkTime = millis();  // Reset Timer
+  lastGreenBlinkTime = millis();   // Reset Timer
+  Serial.println("🟠 LED Animation SOFORT gestartet - parallel zu Sound! Timer gesetzt auf: " + String(ledAnimationStartTime));
   
   // ERFOLGS-ANZEIGE AUF DISPLAY (gleichzeitig mit Sound)
   showSUCCESS();  // Zeige "PASS" 
@@ -663,12 +611,20 @@ void resetToHold() {
   leds[0] = CRGB::Black;  // Orange LED aus
   leds[1] = CRGB::Black;  // Grüne LED aus
   FastLED.show();
+  
+  // LED Animation komplett zurücksetzen
   ledAnimationActive = false;        // Animation stoppen
+  ledAnimationStartTime = 0;         // Timer zurücksetzen
+  greenBlinkCount = 0;               // Grün-Blink-Zähler zurücksetzen
+  orangeLedState = false;            // Orange LED Status zurücksetzen
+  greenLedState = false;             // Grün LED Status zurücksetzen
+  lastOrangeBlinkTime = 0;           // Orange Blink Timer zurücksetzen
+  lastGreenBlinkTime = 0;            // Grün Blink Timer zurücksetzen
   
   // Display zurück zu HOLD
   showHOLD();
   
-  Serial.println("🔄 Zurück zu HOLD-Modus");
+  Serial.println("🔄 Zurück zu HOLD-Modus - alle LED Animation Variablen zurückgesetzt");
 }
 
 // ============== LED BLINKEN ==============
@@ -781,6 +737,13 @@ void handleLoadingAnimation() {
   if (!ledAnimationActive) return;
   
   unsigned long elapsed = millis() - ledAnimationStartTime;
+  
+  // Debug: Zeige Animation-Status (nur alle 1000ms)
+  static unsigned long lastDebugTime = 0;
+  if (millis() - lastDebugTime >= 1000) {
+    Serial.println("🟠 LED Animation aktiv - Elapsed: " + String(elapsed) + "ms von " + String(LED_ANIMATION_TOTAL_DURATION) + "ms");
+    lastDebugTime = millis();
+  }
   
   // Phase 1: 0-4 Sekunden - Alle LEDs aus
   if (elapsed < 4000) {
