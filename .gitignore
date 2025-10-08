@@ -1,0 +1,38 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Arduino IDE
+*.hex
+*.elf
+*.map
+*.lst
+*.sym
+*.lss
+*.eep
+*.srec
+*.bin
+
+# Temporary files
+*~
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Build directories
+build/
+dist/
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# Library files (if not needed)
+libraries/
